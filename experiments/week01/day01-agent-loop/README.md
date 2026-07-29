@@ -1,44 +1,47 @@
-### Agemt Loop
+# Day 01: Agent Loop
 
-###  1、observe（观察）
-获取用户输入的当前信息，将信息转换成agent可以理解的信息
-###  2、Thinking（思考）
-理解用户的问题：
-    现在是什么状态？
-    目标是什么？
-    我需要做什么？
-    下一步应该做什么？
-###  3、Act（行动）
-调用工具（根据思考所得的下一步做什么，开始执行）——会有很多Tool，集成所有可用的Tool
-##  4、Observe结果
-观察是否完成目标，没有完成则继续，
-完成了，则结束
+学习目标：理解 Agent 的核心运行循环，实现 Observe → Think → Act 的闭环。
 
+## Agent Loop 概念
 
- User
+Agent Loop 是 Agent 的核心控制机制，使 Agent 能够反复执行"观察→思考→行动"的循环，直到完成任务。
+
+```
+User
   ↓
- Agent
+Observe（观察用户输入）
   ↓
- Think
+Think （LLM 推理决策）
   ↓
- Action
+Act   （调用工具执行）
   ↓
- Observation
+Observe（观察执行结果）
   ↓
- Answer
+Think （继续推理，判断是否完成）
+  ↓
+  ...（循环直到完成）
+  ↓
+Answer（最终输出）
+```
 
+Agent = LLM + Memory + Tools + Loop + Decision
 
- Agent = LLM+ Memory + Tools + Loop + Decision
+## 文件结构
 
-###  OpenAI Function Calling思想。
- LLM:
- 我需要调用calculator
- ↓
- 程序执行
- ↓
- 结果返回LLM
- ↓
- 继续回答
+```
+day01-agent-loop/
+├── agent.py          ← Agent 核心实现（Observe / Think / Act 循环）
+├── tools.py          ← 工具定义（get_time、calculate）
+└── README.md
+```
+
+## 运行
+
+```bash
+cd experiments/week01/day01-agent-loop
+.venv\Scripts\activate
+python agent.py
+```
 
 
 
