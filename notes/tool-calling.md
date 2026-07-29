@@ -27,7 +27,7 @@ Agent需要Tool，是因为LLM只具备语言推理能力，不具备实时感�
 ool执行后的返回结果会作为Observation加入Agent状态，并通过消息结构重新注入LLM上下文。由于上下文窗口有限，工程中通常需要使用Context Engineering，对Tool结果进行过滤、压缩、总结和结构化处理，保证LLM获得有效信息。
 
 
-### 4、Agent State
+#### 4、Agent State
 Agent 本质不是一个聊天机器人，而是一个不断更新状态并采取行动的状态机
 State
  |
@@ -46,7 +46,7 @@ Update State
  ↓
 Next Loop
 
-### 5、Tool 为什么不只是普通函数？
+#### 5、Tool 为什么不只是普通函数？
 普通函数：代码主动调用；
 Tool：由 LLM 自主决策调用
 Tool 附带标准化 Schema（描述、参数），提供 “自然语言→函数” 的映射，模型看得懂函数作用
@@ -54,21 +54,21 @@ Tool 执行结果会重新送入 LLM 上下文，形成闭环循环；普通函�
 Agent 具备权限控制、轮次限制、异常捕获，Tool 是智能体可自主选择使用的外部能力。
 
 
-### 6、LLM 如何决定什么时候调用 Tool？
+#### 6、LLM 如何决定什么时候调用 Tool？
 1.系统提示词 + Tool Schema 告知模型自身能力边界
 2.LLM 推理时判断：当前信息不足以回答问题，需要外部能力（计算、查时间）
 3.模型输出结构化tool_use块，而不是自然语言；由程序识别并触发执行
 4.如果现有信息足够直接回答，则直接输出文本，不触发工具。
 
 
-### 7、工具结果如何进入下一轮推理？
+#### 7、工具结果如何进入下一轮推理？
 1.Python 代码执行工具，拿到返回值，组装成标准 tool_result 消息
 2.将工具结果追加进全局 messages 对话上下文
 3.Agent 再次发起一轮 LLM 请求，完整上下文（历史对话 + 工具返回）全部传入
 4.LLM 基于观测到的工具结果继续思考，继续选择调用工具或者输出最终答案。
 
 
-### 8、Agent Loop 极简流程（Observe → Think → Act → Answer）
+#### 8、Agent Loop 极简流程（Observe → Think → Act → Answer）
 1.plaintext
 用户提问 
 → Observe(接收输入)
