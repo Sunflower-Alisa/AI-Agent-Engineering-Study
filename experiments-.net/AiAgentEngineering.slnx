@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="AiAgent.Shared/AiAgent.Shared.csproj" />
+  <Project Path="Day01.AgentLoop/Day01.AgentLoop.csproj" />
+  <Project Path="Day02.ToolCalling/Day02.ToolCalling.csproj" />
+  <Project Path="Day03.Memory/Day03.Memory.csproj" />
+  <Project Path="Day04.Planning/Day04.Planning.csproj" />
+</Solution>

@@ -4,3 +4,10 @@ __pycache__/
 .env
 chroma_data/
 test_chroma/
+
+# .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo

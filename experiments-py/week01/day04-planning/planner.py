@@ -1,0 +1,39 @@
+from llm import chat
+import json
+
+def create_plan_static(goal):
+    if "AI Agent" in goal:
+        return [
+            "理解Agent基础",
+            "学习Agent Loop",
+            "学习LangChain",
+            "学习Tool Calling",
+            "学习Memory",
+            "实现RAG Agent"
+        ]
+
+    return [
+        "分析目标",
+        "制定步骤"
+    ]
+
+
+def complete_step(state,step):
+    state.completed.append(step)
+    state.steps.remove(step)
+
+
+def create_plan_dynamic(goal):
+    prompt = f"""你是一个任务规划Agent，用户目标：{goal},请拆解成可执行步骤。
+    要求返回JSON:
+    {{
+    "steps":[
+    "步骤1",
+    "步骤2",
+    "步骤3"
+    ]
+    }}
+    不要输出其他内容。
+    """
+    result = chat(prompt)
+    return json.loads(result)
