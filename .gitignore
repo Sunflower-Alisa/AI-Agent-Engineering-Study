@@ -4,6 +4,7 @@ __pycache__/
 .env
 chroma_data/
 test_chroma/
+.ruff_cache/
 
 # .NET
 bin/
