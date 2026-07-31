@@ -1,7 +1,10 @@
 from state import AgentState
+import json
 
 
 class Agent:
+    MAX_TOOL_PER_STEP = 3
+
     def __init__(self, planner, executor, replanner, evaluator, decision, max_steps=30):
         self.planner = planner
         self.executor = executor
@@ -10,11 +13,15 @@ class Agent:
         self.decision = decision
         self.max_steps = max_steps
 
+    def _tool_key(self, name, args):
+        return (name, json.dumps(args or {}, sort_keys=True))
+
     def run(self, goal):
         state = AgentState(goal)
         state.steps = self.planner.create_plan_dynamic(goal).steps
 
         steps_done = 0
+        tool_attempts = 0
         while state.steps and steps_done < self.max_steps:
             steps_done += 1
             step = state.steps[0]
@@ -32,14 +39,31 @@ class Agent:
             decision = self.decision.decide(state)
             state.next_action = decision.action
 
-            # 工具动作：执行后把结果回填，重新决策，不推进步骤
             if decision.action == "tool":
-                tool_result = self.executor.execute_tool(decision.tool, decision.args)
+                # 同一步工具尝试次数上限，防止 LLM 反复调用同一工具
+                if tool_attempts >= self.MAX_TOOL_PER_STEP:
+                    state.steps.pop(0)
+                    state.completed.append(step)
+                    tool_attempts = 0
+                    continue
+                tool_attempts += 1
+
+                # 相同工具+参数结果缓存，命中则不重复执行
+                key = self._tool_key(decision.tool, decision.args)
+                if key in state.tool_results:
+                    tool_result = state.tool_results[key]
+                else:
+                    tool_result = self.executor.execute_tool(
+                        decision.tool, decision.args
+                    )
+                    state.tool_results[key] = tool_result
+
                 state.observation = tool_result
                 state.observations.append(tool_result)
                 continue
 
-            # 以下动作表示本步已结束，弹出该步骤
+            # 非 tool 动作：本步结束，弹出该步骤
+            tool_attempts = 0
             state.steps.pop(0)
 
             if decision.action == "continue":

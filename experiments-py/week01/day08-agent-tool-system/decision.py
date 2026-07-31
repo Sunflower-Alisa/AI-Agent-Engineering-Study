@@ -8,6 +8,13 @@ class Decision:
         tools_desc = "\n".join(
             f"- {name}: {tool.description.strip()}" for name, tool in TOOLS.items()
         )
+        cached = (
+            "\n".join(
+                f"- {name}({args}): {result}"
+                for (name, args), result in state.tool_results.items()
+            )
+            or "（无）"
+        )
         prompt = f"""
 你是Agent决策模块，
 当前状态：
@@ -15,6 +22,8 @@ class Decision:
 当前步骤：{state.current_step}
 观察结果：{state.observation}
 评估结果：{state.evaluation}
+已完成的计算结果：
+{cached}
 
 可用工具：
 {tools_desc}
@@ -24,6 +33,10 @@ class Decision:
 - tool：需要调用工具获取信息（必须同时给出 tool 名称和 args 参数）
 - replan：当前计划需要调整
 - finish：目标已达成，结束任务
+
+规则：
+- 如果观察结果或已完成的计算结果中已经包含所需答案，直接选择 continue 或 finish，禁止重复调用工具。
+- 不要对同一个计算反复调用工具。
 
 只返回JSON：
 {{

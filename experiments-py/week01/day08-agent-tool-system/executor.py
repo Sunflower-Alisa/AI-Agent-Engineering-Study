@@ -20,7 +20,9 @@ class Executor:
             return f"错误：未知工具 {name}，可用工具：{list(TOOLS)}"
         try:
             if args:
-                return tool.run(**args)
-            return tool.run()
+                result = tool.run(**args)
+            else:
+                result = tool.run()
+            return f"[{name}] {result}"
         except TypeError as e:
             return f"错误：工具 {name} 调用失败，参数应匹配：{tool.description.strip()}：{e}"

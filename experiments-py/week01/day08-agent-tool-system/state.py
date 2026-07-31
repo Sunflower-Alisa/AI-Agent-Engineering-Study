@@ -9,3 +9,4 @@ class AgentState:
         self.observations = []  # 历史观察/工具结果记录
         self.next_action = None
         self.evaluation = None
+        self.tool_results = {}  # 工具结果缓存：(name, args) → 结果，避免重复计算
