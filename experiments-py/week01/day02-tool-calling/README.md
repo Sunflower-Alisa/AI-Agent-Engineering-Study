@@ -74,9 +74,8 @@ tool_functions = {
 ## 运行
 
 ```bash
-cd experiments/week01/day02-tool-calling
-.venv\Scripts\activate
-python main.py
+cd experiments-py/week01/day02-tool-calling
+..\..\.venv\Scripts\python.exe main.py
 ```
 
 输入问题测试工具调用，输入 `exit` 或 `quit` 退出。

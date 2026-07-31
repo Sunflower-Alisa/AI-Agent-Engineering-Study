@@ -1,16 +1,8 @@
 import logging
 import hashlib
 import struct
-import sys
-import os
 from typing import List
 
-sys.path.insert(
-    0,
-    os.path.join(
-        os.path.dirname(__file__), "../day01-agent-loop/.venv/Lib/site-packages"
-    ),
-)
 import chromadb
 from chromadb.config import Settings
 

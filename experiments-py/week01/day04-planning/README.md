@@ -47,14 +47,14 @@ day04-planning/
 ## 运行
 
 ```bash
-py -3.9 main.py
+..\..\.venv\Scripts\python.exe main.py
 ```
 
-> 注意：Windows 下 `python` 命令可能指向 Microsoft Store 占位程序，建议用 `py -3.9`
+> 统一使用 `experiments-py/.venv`，无需 `py -3.9` 或手动配置 sys.path
 
 ## 重点注意事项
 
-1. **llm.py 路径处理**：通过 `sys.path.insert` 引入上层 `config.py` 和 `day01-agent-loop/.venv`，无法直接 `python main.py` 运行（需要使用 `py -3.9 main.py`）
+1. **统一虚拟环境**：所有 day 共用 `experiments-py/.venv`，通过 `.pth` 自动引入 `config.py`，各脚本不再需要 sys.path hack
 2. **启用了动态规划**：代码同时保留 `create_plan_static` / `replan_static` 作为静态版本对照，当前注释掉静态版本
 
 

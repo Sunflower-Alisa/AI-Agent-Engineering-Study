@@ -17,34 +17,37 @@
 ## 目录结构
 
 ```
-experiments/
+experiments-py/
 ├── README.md          ← 本文件
 ├── config.py          ← 全局 LLM 配置（API 密钥、模型、地址）
+├── .venv/             ← 统一虚拟环境（chromadb + openai）
 │
 └── week01/            ← 第一周：Agent 基础
     ├── day01-agent-loop/    ← Agent Loop 基础实现
     │   ├── agent.py
     │   └── tools.py
-    └── day02-tool-calling/  ← Tool Calling 实现
-        ├── agent.py
-        ├── tools.py
-        └── main.py
+    ├── day02-tool-calling/  ← Tool Calling 实现
+    │   ├── agent.py
+    │   ├── tools.py
+    │   └── main.py
+    ├── day03-memory/        ← Memory 记忆模块
+    └── day04-planning/      ← Planning 计划与重规划
 ```
 
 ## 运行
 
+所有实验共用 `experiments-py/.venv` 统一虚拟环境（已安装 chromadb + openai）。
+通过 site-packages 中的 `experiments.pth` 自动将 `experiments-py/` 加入 sys.path，因此各 .py 无需再做环境引入。
+
 ```bash
-# 进入对应实验目录
-cd week01/day02-tool-calling
-
-# 确保虚拟环境已安装依赖
-python -m venv .venv
-.venv\Scripts\activate
-pip install openai python-dotenv
-
 # 设置 API 密钥
 set DEEPSEEK_API_KEY=sk-xxx
 
-# 运行
+# 用统一 venv 运行对应实验
+cd week01/day02-tool-calling
+..\..\.venv\Scripts\python.exe main.py
+
+# 或激活 venv 后直接运行
+..\..\.venv\Scripts\activate
 python main.py
 ```

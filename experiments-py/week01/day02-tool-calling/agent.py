@@ -1,9 +1,6 @@
 import json
-import sys
-import os
 from openai import OpenAI
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 from config import api_key, MODEL, cfg
 
 

@@ -1,17 +1,4 @@
 import json
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
-_VENV = os.path.join(
-    os.path.dirname(__file__), "../day01-agent-loop/.venv/Lib/site-packages"
-)
-sys.path.insert(0, _VENV)
-os.environ["PATH"] = (
-    os.path.join(os.path.dirname(__file__), "../day01-agent-loop/.venv/Scripts")
-    + ";"
-    + os.environ.get("PATH", "")
-)
 
 from openai import OpenAI
 from config import api_key, MODEL, cfg

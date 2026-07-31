@@ -1,6 +1,6 @@
 from models import Evaluation
 
-
+# 用途：判断结果质量
 def evaluate(state, observation):
     if observation.issues:
         return Evaluation(need_replan=True, reason=observation.issues)

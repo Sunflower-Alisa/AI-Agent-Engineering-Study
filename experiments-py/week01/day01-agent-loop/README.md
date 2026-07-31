@@ -38,9 +38,8 @@ day01-agent-loop/
 ## 运行
 
 ```bash
-cd experiments/week01/day01-agent-loop
-.venv\Scripts\activate
-python agent.py
+cd experiments-py/week01/day01-agent-loop
+..\..\.venv\Scripts\python.exe agent.py
 ```
 
 
