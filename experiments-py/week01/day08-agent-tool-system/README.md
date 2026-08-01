@@ -1,20 +1,25 @@
-# Day08 - Agent Tool System（Agent 工具系统）
+# Day08 - Agent Tool System（Agent 工具系统 + 反思）
 
 ## 结构
 
 ```
 day08-agent-tool-system/
-├── main.py        # 入口：组装各模块，交互式输入
-├── agent.py       # Agent：Plan → Act → Evaluate → Decide 循环 + 动作分发
-├── planner.py     # Planner：静态（硬编码）/ 动态（LLM 拆解目标）计划
-├── executor.py    # Executor：步骤执行（模拟）+ 工具调用（走 TOOLS 注册表）
-├── evaluator.py   # Evaluator：评估执行结果质量
-├── decision.py    # Decision：LLM 依据状态选择动作（注入可用工具列表）
-├── replanner.py   # Replanner：动作=replan 时重新制定计划
-├── models.py      # pydantic 模型：Plan / Evaluation / Execution / Decision
-├── llm.py         # LLM 封装：chat + parse_json（统一 venv + config.py）
-├── state.py       # AgentState：目标/步骤/观察/评估/下一动作
-└── tools/         # 工具系统
+├── main.py             # 入口：组装所有模块，交互式输入
+├── agent.py            # Agent：Plan → Act → Evaluate → Decide → Generate → Reflect
+├── planner.py          # Planner：静态（硬编码）/ 动态（LLM 拆解）计划
+├── executor.py         # Executor：动作执行（工具 / LLM）+ 步骤模拟
+├── evaluator.py        # Evaluator：评估步骤执行结果质量
+├── decision.py         # Decision：LLM 决策动作（注入工具列表 + 缓存结果）
+├── replanner.py        # Replanner：动作=replan 时重新制定计划
+├── actionrouter.py     # ActionRouter：把步骤路由到 tool / llm 动作
+├── generator.py        # AnswerGenerator：汇总执行结果生成最终答案
+├── reflection/         # 反思模块
+│   ├── evaluator.py    # Reflection_Evaluator：答案质量评分 0-10
+│   └── improver.py     # Improver：评分低于阈值时改进答案
+├── models.py           # pydantic 模型（含 ReflectionResult / ActionModel）
+├── llm.py              # LLM 封装：chat + parse_json（统一 venv + config.py）
+├── state.py            # AgentState：目标/步骤/观察/评估/缓存/最终答案
+└── tools/              # 工具系统
     ├── base.py        # Tool 抽象基类（run 接口）
     ├── registry.py    # TOOLS 注册表：name → 工具实例
     ├── calculator.py  # 计算器工具（基于 ast 的安全求值，不用 eval）
@@ -33,7 +38,11 @@ day08-agent-tool-system/
                      └───────┬───────────┘
                              ▼
                     ┌────────────────┐
-                    │ Executor 执行步 │←──────────── 循环
+                    │ ActionRouter 路由│ ← 首个步骤按关键词分派工具/LLM
+                    └───────┬────────┘
+                            ▼
+                    ┌────────────────┐
+                    │ Executor 执行动作 │←──────── 循环
                     └───────┬────────┘
                             ▼
                    ┌──────────────────┐
@@ -46,36 +55,46 @@ day08-agent-tool-system/
               tool     │    │    │
               ▼        │    │    │
      ┌──────────────┐  │    │    │
-     │ execute_tool │  │    │    │
-     │ 结果回填后    │  │    │    │
-     │ 重新决策      │  │    │    │
+     │ 查缓存→执行→  │  │    │    │
+     │ 回填→重决策   │  │    │    │
      └──────────────┘  │    │    │
               continue │    │    │ replan
                        ▼    │    ▼
                   ┌────────┐ │ ┌────────────┐
                   │ 记入完成 │ │ │ Replanner  │
-                  │ 继续下一步│ │ │ 重新规划    │
                   └────────┘ │ └────────────┘
                              │ finish
                              ▼
-                       ┌──────────┐
-                       │ 结束任务  │
-                       └──────────┘
+                    ┌──────────────────┐
+                    │ Generator 生成答案 │  ← 汇总 observations
+                    └───────┬──────────┘
+                            ▼
+                   ┌──────────────────┐
+                   │ Reflection 评分   │  0-10，< 阈值则改进
+                   └───────┬──────────┘
+                           ▼
+                       返回最终答案
 ```
 
 1. **Plan**: `planner.py` 将目标拆解为有序步骤列表
-2. **Execute**: `executor.py` 执行当前步骤（模拟执行）
-3. **Evaluate**: `evaluator.py` 评估结果（`issues` 非空即建议重规划）
-4. **Decide**: `decision.py` 把 `目标 + 当前步骤 + 观察结果 + 评估结果 + 可用工具列表` 交给 LLM，返回动作 JSON
-5. **按动作分发**（`agent.py`）：
-   - `tool` → `execute_tool` 调用工具，结果回填 `state.observation` 后**原地重新决策**（不推进步骤）
+2. **Route**: `actionrouter.py` 首个步骤按关键词路由——含「搜索/收集资料」→ `search` 工具；含「计算」→ `calculator` 工具；否则走 LLM
+3. **Execute**: `executor.py` 执行动作：`ActionModel.type == "tool"` 走工具，`== "llm"` 调 LLM；后续步骤走 `execute_step` 模拟
+4. **Evaluate**: `evaluator.py` 评估结果（`issues` 非空即建议 replan）
+5. **Decide**: `decision.py` 把 `目标 + 当前步骤 + 观察 + 评估 + 已完成计算结果 + 工具列表` 交给 LLM，返回动作 JSON
+6. **按动作分发**（`agent.py`）：
+   - `tool` → 查 `state.tool_results` 缓存，命中复用；未命中才执行并缓存，回填 `state.observation` 后**原地重决策**
    - `continue` → 弹出步骤，记入 `completed`
    - `replan` → 弹出步骤，记入 `failed`，调用 `replanner.py` 生成新计划
-   - `finish` → 提前结束任务
+   - `finish` → 结束循环
+7. **生成 + 反思**（Day9）：
+   - `generator.generate(state)` 汇总 `state.observations` 生成最终答案
+   - `reflection/evaluator.py` 对答案评分 0-10
+   - 评分 < `reflection_threshold`(8) → `reflection/improver.py` 按问题清单改进答案
+   - 返回最终答案
 
 ## 决策动作（Decision Action）
 
-`models.py` 中 `Decision.action` 用 `Literal` 限定四种动作，`tool`/`args`/`reason` 为可选字段：
+`models.py` 中 `Decision.action` 用 `Literal` 限定四种动作：
 
 | 动作 | 含义 | 处理位置 |
 |---|---|---|
@@ -84,7 +103,24 @@ day08-agent-tool-system/
 | `replan` | 当前计划需调整 | `replanner.py` 重新生成步骤 |
 | `finish` | 目标已达成，结束 | `agent.py` break 跳出循环 |
 
-> 相比 Day05：决策模块不再只有空壳，`decision.py` 会把 `TOOLS` 注册表（工具名 + 描述）注入 prompt，LLM 可选对工具并返回 `tool` + `args`，真正打通 Think → Act(Tool) → Observe → Think 的闭环。
+## 防重复计算机制
+
+`tool` 动作是「执行 → 回填 → 原地重决策」，若 LLM 意识不到答案已在手里，可能对同一计算反复调用。三层保护：
+
+| 机制 | 位置 | 作用 |
+|---|---|---|
+| **结果缓存** | `agent.py` + `state.tool_results` | 相同 `(工具, 参数)` 命中缓存则复用结果，**不再重复执行工具** |
+| **决策规则** | `decision.py` prompt | 明确「观察/缓存已含答案 → 禁止重复调用工具」 |
+| **单步工具上限** | `agent.py` `MAX_TOOL_PER_STEP=3` | 同一步骤工具请求超过 3 次强制完成该步，杜绝死循环 |
+
+> 工具结果以 `[calculator] 20` 形式回填（`executor.py`），让 LLM 能明确该结果属于哪次计算。
+
+## 反思模块（reflection/）
+
+| 文件 | 作用 |
+|---|---|
+| `evaluator.py` | `Reflection_Evaluator.evaluate_answer(question, answer)` → LLM 返回 `score(0-10)` + `issues[]` |
+| `improver.py` | `Improver.improve_answer(question, answer, issues)` → 按问题清单重新生成优化答案 |
 
 ## 工具系统（tools/）
 
@@ -105,20 +141,26 @@ day08-agent-tool-system/
 
 1. **统一虚拟环境**：所有 day 共用 `experiments-py/.venv`，无需手动配置 sys.path
 2. **Python 3.9 兼容**：venv 是 3.9，`Optional[str]` 写法不能用 `str | None`（PEP 604 需 3.10+）
-3. **pydantic 对象传参**：`Execution`/`Evaluation`/`Decision`/`Plan` 均为 `BaseModel`，用属性访问（`observation.issues`、`decision.action`）
-4. **防死循环**：`Agent` 默认 `max_steps=30`，避免 replan / tool 反复触发导致死循环
-5. **工具循环代价**：`tool` 动作会原地重决策，若 LLM 反复选同一工具会多次调用——这是 LLM 决策系统的已知权衡，可在决策 prompt 中提示「观察结果已含答案则不要重复调用工具」
+3. **pydantic 对象传参**：各模型均为 `BaseModel`，用属性访问（`observation.issues`、`decision.action`、`action.type`）
+4. **防死循环**：`Agent` 默认 `max_steps=30` + 单步工具上限 `MAX_TOOL_PER_STEP=3`，双重兜底避免 replan / tool 反复触发
+5. **反思改进**：答案评分低于 `reflection_threshold`(8) 才触发 `Improver`，避免每次生成都做冗余改进
+6. **工具循环代价**：`tool` 动作会原地重决策（每轮一次 LLM），结果缓存避免重复执行，但工具循环本身仍有多次 LLM 调用开销
 
 ## 知识点对应
 
-本示例对应 **AI Agent 工具调用（Tool Calling / ReAct）** 模块知识：
+本示例对应 **AI Agent 工具调用 + 反思（Tool Calling / ReAct / Reflection）** 模块知识：
 
 | 概念 | 对应代码 |
 |---|---|
 | 工具抽象与注册 (Tool Abstraction & Registry) | `tools/base.py` + `tools/registry.py` |
 | 工具实现 | `tools/calculator.py`（安全求值）、`tools/search.py` |
+| 动作路由 (Action Routing) | `actionrouter.py` → 步骤按关键词路由到 tool / llm |
 | 工具选择 (Tool Selection) | `decision.py` → LLM 返回 `tool` + `args` |
 | 工具执行与结果回填 (Tool Execution) | `executor.execute_tool` → 回填 `state.observation` 后重决策 |
+| 结果缓存与防重复计算 | `state.tool_results` + `agent.py` 缓存命中 + `MAX_TOOL_PER_STEP` |
+| 结果生成 (Answer Generation) | `generator.py` → 汇总执行结果生成最终答案 |
+| 反思评分 (Reflection) | `reflection/evaluator.py` → 答案质量评分 0-10 |
+| 改进答案 (Improvement) | `reflection/improver.py` → 低于阈值时改进 |
 | 行动决策 (Action Selection) | `decision.py` → continue/tool/replan/finish |
 | 失败处理与重规划 (Replanning) | `replanner.py` → 动作=replan 时重新生成步骤 |
-| Agent 状态跟踪 (State Tracking) | `state.py` → 维护目标/步骤/观察/评估/下一动作 |
+| Agent 状态跟踪 (State Tracking) | `state.py` → 维护目标/步骤/观察/评估/缓存/答案 |

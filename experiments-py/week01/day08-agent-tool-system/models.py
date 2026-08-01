@@ -23,3 +23,15 @@ class Decision(BaseModel):
     tool: Optional[str] = None
     args: Optional[dict] = None
     reason: str = ""
+
+
+class ReflectionResult(BaseModel):
+    score:int
+    issues:list[str]
+
+
+class ActionModel(BaseModel):
+    type:str
+    tool:str
+    args: Optional[dict] = None
+    prompt:str
