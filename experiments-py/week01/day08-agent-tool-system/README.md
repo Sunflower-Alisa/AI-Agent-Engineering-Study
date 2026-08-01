@@ -78,7 +78,7 @@ day08-agent-tool-system/
 
 1. **Plan**: `planner.py` 将目标拆解为有序步骤列表
 2. **Route**: `actionrouter.py` 首个步骤按关键词路由——含「搜索/收集资料」→ `search` 工具；含「计算」→ `calculator` 工具；否则走 LLM
-3. **Execute**: `executor.py` 执行动作：`ActionModel.type == "tool"` 走工具，`== "llm"` 调 LLM；后续步骤走 `execute_step` 模拟
+3. **Execute**: `executor.py` 执行动作——工具动作走 `execute_tool`（经 `agent._run_tool` 缓存），LLM 动作走 `execute_llm`；后续步骤走 `execute_step` 模拟
 4. **Evaluate**: `evaluator.py` 评估结果（`issues` 非空即建议 replan）
 5. **Decide**: `decision.py` 把 `目标 + 当前步骤 + 观察 + 评估 + 已完成计算结果 + 工具列表` 交给 LLM，返回动作 JSON
 6. **按动作分发**（`agent.py`）：
@@ -109,7 +109,7 @@ day08-agent-tool-system/
 
 | 机制 | 位置 | 作用 |
 |---|---|---|
-| **结果缓存** | `agent.py` + `state.tool_results` | 相同 `(工具, 参数)` 命中缓存则复用结果，**不再重复执行工具** |
+| **结果缓存** | `agent.py` `_run_tool()` + `state.tool_results` | 路由动作与 Decision 的 tool 动作**统一走同一缓存入口**，相同 `(工具, 参数)` 命中缓存则复用结果，**不再重复执行工具** |
 | **决策规则** | `decision.py` prompt | 明确「观察/缓存已含答案 → 禁止重复调用工具」 |
 | **单步工具上限** | `agent.py` `MAX_TOOL_PER_STEP=3` | 同一步骤工具请求超过 3 次强制完成该步，杜绝死循环 |
 
@@ -156,7 +156,7 @@ day08-agent-tool-system/
 | 工具实现 | `tools/calculator.py`（安全求值）、`tools/search.py` |
 | 动作路由 (Action Routing) | `actionrouter.py` → 步骤按关键词路由到 tool / llm |
 | 工具选择 (Tool Selection) | `decision.py` → LLM 返回 `tool` + `args` |
-| 工具执行与结果回填 (Tool Execution) | `executor.execute_tool` → 回填 `state.observation` 后重决策 |
+| 工具执行与结果回填 (Tool Execution) | `agent._run_tool` → `executor.execute_tool` → 回填 `state.observation` 后重决策 |
 | 结果缓存与防重复计算 | `state.tool_results` + `agent.py` 缓存命中 + `MAX_TOOL_PER_STEP` |
 | 结果生成 (Answer Generation) | `generator.py` → 汇总执行结果生成最终答案 |
 | 反思评分 (Reflection) | `reflection/evaluator.py` → 答案质量评分 0-10 |

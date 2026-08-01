@@ -5,7 +5,19 @@ import json
 class Agent:
     MAX_TOOL_PER_STEP = 3
 
-    def __init__(self, planner, executor, replanner, evaluator, decision,generator,reflection,improver,router, max_steps=30):
+    def __init__(
+        self,
+        planner,
+        executor,
+        replanner,
+        evaluator,
+        decision,
+        generator,
+        reflection,
+        improver,
+        router,
+        max_steps=30,
+    ):
         self.planner = planner
         self.executor = executor
         self.replanner = replanner
@@ -23,11 +35,20 @@ class Agent:
     def _tool_key(self, name, args):
         return (name, json.dumps(args or {}, sort_keys=True))
 
+    def _run_tool(self, state, name, args):
+        """执行工具并写入缓存，相同 (工具, 参数) 命中缓存不再重复执行。"""
+        key = self._tool_key(name, args)
+        if key in state.tool_results:
+            return state.tool_results[key]
+        result = self.executor.execute_tool(name, args)
+        state.tool_results[key] = result
+        return result
+
     def run(self, goal):
         state = AgentState(goal)
         state.steps = self.planner.create_plan_dynamic(goal).steps
 
-        first_action = True;
+        first_action = True
         steps_done = 0
         tool_attempts = 0
         while state.steps and steps_done < self.max_steps:
@@ -35,21 +56,23 @@ class Agent:
             step = state.steps[0]
             state.current_step = step
 
+            action = None
             if first_action:
                 action = self.router.route(step)
-                # Act
-                observation = self.executor.execute(action)
+                # Act：路由动作也走统一缓存入口，避免后续 Decision 再调同一工具时重复执行
+                if action.type == "tool":
+                    observation = self._run_tool(state, action.tool, action.args)
+                else:
+                    observation = self.executor.execute(action)
+                first_action = False
             else:
                 # Act
-                observation = self.executor.execute_step(step)
-
+                observation = self.executor.execute(action)
 
             state.observation = observation
-            state.observations.append({
-                "step":step,
-                "action":action,
-                "result":observation
-            })
+            state.observations.append(
+                {"step": step, "action": action, "result": observation}
+            )
 
             # 评价
             state.evaluation = self.evaluator.evaluate(state, observation)
@@ -58,7 +81,7 @@ class Agent:
             decision = self.decision.decide(state)
             state.next_action = decision.action
 
-            if decision.action == "tool" and not first_action:
+            if decision.action == "tool":
                 # 同一步工具尝试次数上限，防止 LLM 反复调用同一工具
                 if tool_attempts >= self.MAX_TOOL_PER_STEP:
                     state.steps.pop(0)
@@ -67,15 +90,8 @@ class Agent:
                     continue
                 tool_attempts += 1
 
-                # 相同工具+参数结果缓存，命中则不重复执行
-                key = self._tool_key(decision.tool, decision.args)
-                if key in state.tool_results:
-                    tool_result = state.tool_results[key]
-                else:
-                    tool_result = self.executor.execute_tool(
-                        decision.tool, decision.args
-                    )
-                    state.tool_results[key] = tool_result
+                # 走统一缓存入口，命中则不重复执行
+                tool_result = self._run_tool(state, decision.tool, decision.args)
 
                 state.observation = tool_result
                 state.observations.append(tool_result)
@@ -99,9 +115,6 @@ class Agent:
                 state.completed.append(step)
                 break
 
-            if first_action:
-                first_action = False
-
         if not state.completed:
             return f"目标未完成：{goal}"
         # else:
@@ -111,9 +124,9 @@ class Agent:
         answer = self.generator.generate(state)
 
         # reflection 评价
-        reflection = self.reflection.evaluate_answer(goal,answer)
+        reflection = self.reflection.evaluate_answer(goal, answer)
 
         if reflection.score < self.reflection_threshold:
-            answer = self.improver.improve_answer(goal,answer,reflection.issues)
+            answer = self.improver.improve_answer(goal, answer, reflection.issues)
 
         return answer

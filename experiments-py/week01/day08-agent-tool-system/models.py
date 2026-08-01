@@ -26,12 +26,12 @@ class Decision(BaseModel):
 
 
 class ReflectionResult(BaseModel):
-    score:int
-    issues:list[str]
+    score: int
+    issues: list[str]
 
 
 class ActionModel(BaseModel):
-    type:str
-    tool:str
+    type: str
+    tool: Optional[str] = None
     args: Optional[dict] = None
-    prompt:str
+    prompt: str = ""
