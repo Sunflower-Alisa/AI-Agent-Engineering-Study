@@ -1,5 +1,6 @@
 from state import AgentState
 import json
+from memory import Memory
 
 
 class Agent:
@@ -32,6 +33,9 @@ class Agent:
         self.reflection_threshold = 8
         self.router = router
 
+        # Day10 新增
+        self.memory = Memory()
+
     def _tool_key(self, name, args):
         return (name, json.dumps(args or {}, sort_keys=True))
 
@@ -45,9 +49,9 @@ class Agent:
         return result
 
     def run(self, goal):
+        history = self.memory.retrieve()
         state = AgentState(goal)
-        state.steps = self.planner.create_plan_dynamic(goal).steps
-
+        state.steps = self.planner.create_plan_dynamic(goal, history).steps
         first_action = True
         steps_done = 0
         tool_attempts = 0
@@ -56,18 +60,18 @@ class Agent:
             step = state.steps[0]
             state.current_step = step
 
+            # Act：对当前步骤生成动作，工具动作走统一缓存入口，避免重复执行
             action = None
             if first_action:
                 action = self.router.route(step)
-                # Act：路由动作也走统一缓存入口，避免后续 Decision 再调同一工具时重复执行
                 if action.type == "tool":
                     observation = self._run_tool(state, action.tool, action.args)
                 else:
-                    observation = self.executor.execute(action)
+                    observation = self.executor.execute_llm(action.prompt)
                 first_action = False
             else:
                 # Act
-                observation = self.executor.execute(action)
+                observation = self.executor.execute_llm(step)
 
             state.observation = observation
             state.observations.append(
@@ -128,5 +132,16 @@ class Agent:
 
         if reflection.score < self.reflection_threshold:
             answer = self.improver.improve_answer(goal, answer, reflection.issues)
+
+        self.memory.save(
+            {
+                "goal": goal,
+                "completed": state.completed,
+                "failed": state.failed,
+                "observations": state.observations,  # 暂时全存，未做压缩筛选
+                "reflection": reflection,
+                "final_answer": answer,
+            }
+        )
 
         return answer

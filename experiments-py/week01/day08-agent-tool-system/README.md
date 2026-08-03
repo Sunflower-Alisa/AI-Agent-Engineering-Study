@@ -38,7 +38,7 @@ day08-agent-tool-system/
                      └───────┬───────────┘
                              ▼
                     ┌────────────────┐
-                    │ ActionRouter 路由│ ← 首个步骤按关键词分派工具/LLM
+                    │ ActionRouter 路由│ ← 每步按关键词分派工具/LLM
                     └───────┬────────┘
                             ▼
                     ┌────────────────┐
@@ -77,8 +77,8 @@ day08-agent-tool-system/
 ```
 
 1. **Plan**: `planner.py` 将目标拆解为有序步骤列表
-2. **Route**: `actionrouter.py` 首个步骤按关键词路由——含「搜索/收集资料」→ `search` 工具；含「计算」→ `calculator` 工具；否则走 LLM
-3. **Execute**: `executor.py` 执行动作——工具动作走 `execute_tool`（经 `agent._run_tool` 缓存），LLM 动作走 `execute_llm`；后续步骤走 `execute_step` 模拟
+2. **Route**: `actionrouter.py` 对**每个当前步骤**按关键词路由——含「搜索/收集资料」→ `search` 工具；含「计算」→ `calculator` 工具；否则走 LLM
+3. **Execute**: `executor.py` 执行动作——工具动作走 `execute_tool`（经 `agent._run_tool` 缓存），LLM 动作走 `execute_llm(action.prompt)`；`execute_step` 为遗留的步骤模拟桩
 4. **Evaluate**: `evaluator.py` 评估结果（`issues` 非空即建议 replan）
 5. **Decide**: `decision.py` 把 `目标 + 当前步骤 + 观察 + 评估 + 已完成计算结果 + 工具列表` 交给 LLM，返回动作 JSON
 6. **按动作分发**（`agent.py`）：
@@ -145,6 +145,7 @@ day08-agent-tool-system/
 4. **防死循环**：`Agent` 默认 `max_steps=30` + 单步工具上限 `MAX_TOOL_PER_STEP=3`，双重兜底避免 replan / tool 反复触发
 5. **反思改进**：答案评分低于 `reflection_threshold`(8) 才触发 `Improver`，避免每次生成都做冗余改进
 6. **工具循环代价**：`tool` 动作会原地重决策（每轮一次 LLM），结果缓存避免重复执行，但工具循环本身仍有多次 LLM 调用开销
+7. **每步都重新路由**：`agent.py` 每次循环对**当前步骤**调用 `actionrouter.route(step)` 生成动作（工具走 `_run_tool` 缓存，避免与 Decision 重复执行同一个工具）；`execute_llm` 传入的是 `action.prompt`（字符串），不要把 `ActionModel` 对象直接当 LLM content
 
 ## 知识点对应
 
