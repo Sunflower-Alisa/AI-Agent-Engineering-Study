@@ -16,6 +16,7 @@ day08-agent-tool-system/
 ├── reflection/         # 反思模块
 │   ├── evaluator.py    # Reflection_Evaluator：答案质量评分 0-10
 │   └── improver.py     # Improver：评分低于阈值时改进答案
+├── memory.py           # Memory：短期记忆（最近 5 条执行记录），供 Planner 参考
 ├── models.py           # pydantic 模型（含 ReflectionResult / ActionModel）
 ├── llm.py              # LLM 封装：chat + parse_json（统一 venv + config.py）
 ├── state.py            # AgentState：目标/步骤/观察/评估/缓存/最终答案
@@ -76,7 +77,7 @@ day08-agent-tool-system/
                        返回最终答案
 ```
 
-1. **Plan**: `planner.py` 将目标拆解为有序步骤列表
+1. **Plan**: `planner.py` `create_plan_dynamic(goal, history)` 先取 `memory.retrieve()`（最近 5 条历史记录），将目标与历史一并交给 LLM 拆解为有序步骤列表，避免重复已完成步骤
 2. **Route**: `actionrouter.py` 对**每个当前步骤**按关键词路由——含「搜索/收集资料」→ `search` 工具；含「计算」→ `calculator` 工具；否则走 LLM
 3. **Execute**: `executor.py` 执行动作——工具动作走 `execute_tool`（经 `agent._run_tool` 缓存），LLM 动作走 `execute_llm(action.prompt)`；`execute_step` 为遗留的步骤模拟桩
 4. **Evaluate**: `evaluator.py` 评估结果（`issues` 非空即建议 replan）
@@ -122,6 +123,15 @@ day08-agent-tool-system/
 | `evaluator.py` | `Reflection_Evaluator.evaluate_answer(question, answer)` → LLM 返回 `score(0-10)` + `issues[]` |
 | `improver.py` | `Improver.improve_answer(question, answer, issues)` → 按问题清单重新生成优化答案 |
 
+## 记忆模块（memory.py）
+
+`Agent.__init__` 创建 `Memory()` 短期记忆，记录每次任务的执行结果，供下一次 Planner 规划时参考：
+
+| 方法 | 作用 |
+|---|---|
+| `save(data)` | 在一次任务结束后，把 `{goal, completed, failed, observations, reflection, final_answer}` 追加进短期记忆 |
+| `retrieve()` | 返回最近 5 条历史记录，注入 `planner.create_plan_dynamic(goal, history)` 作为规划上下文 |
+
 ## 工具系统（tools/）
 
 - **`base.py`**：`Tool` 抽象基类，子类实现 `run(**kwargs)`
@@ -146,6 +156,7 @@ day08-agent-tool-system/
 5. **反思改进**：答案评分低于 `reflection_threshold`(8) 才触发 `Improver`，避免每次生成都做冗余改进
 6. **工具循环代价**：`tool` 动作会原地重决策（每轮一次 LLM），结果缓存避免重复执行，但工具循环本身仍有多次 LLM 调用开销
 7. **每步都重新路由**：`agent.py` 每次循环对**当前步骤**调用 `actionrouter.route(step)` 生成动作（工具走 `_run_tool` 缓存，避免与 Decision 重复执行同一个工具）；`execute_llm` 传入的是 `action.prompt`（字符串），不要把 `ActionModel` 对象直接当 LLM content
+8. **短期记忆**：`memory.py` 为进程内列表（取最近 5 条），未持久化；规划时借助历史避免重复已完成步骤
 
 ## 知识点对应
 
@@ -162,6 +173,7 @@ day08-agent-tool-system/
 | 结果生成 (Answer Generation) | `generator.py` → 汇总执行结果生成最终答案 |
 | 反思评分 (Reflection) | `reflection/evaluator.py` → 答案质量评分 0-10 |
 | 改进答案 (Improvement) | `reflection/improver.py` → 低于阈值时改进 |
+| 记忆 (Memory) | `memory.py` → 短期记忆最近 5 条，注入 `planner.create_plan_dynamic` |
 | 行动决策 (Action Selection) | `decision.py` → continue/tool/replan/finish |
 | 失败处理与重规划 (Replanning) | `replanner.py` → 动作=replan 时重新生成步骤 |
 | Agent 状态跟踪 (State Tracking) | `state.py` → 维护目标/步骤/观察/评估/缓存/答案 |
