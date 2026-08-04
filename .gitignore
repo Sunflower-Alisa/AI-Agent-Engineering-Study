@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .env
 chroma_data/
+chroma_db/
 test_chroma/
 .ruff_cache/
 
