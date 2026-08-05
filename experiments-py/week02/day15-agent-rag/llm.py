@@ -11,6 +11,7 @@ def chat(prompt, max_retries=3):
         response = client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
             max_tokens=2048,
         )
         content = response.choices[0].message.content

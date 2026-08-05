@@ -19,7 +19,7 @@ class Execution(BaseModel):
 
 
 class Decision(BaseModel):
-    action: Literal["continue", "tool", "replan", "finish"]
+    action: Literal[ "tool", "replan", "llm"]
     tool: Optional[str] = None
     args: Optional[dict] = None
     reason: str = ""

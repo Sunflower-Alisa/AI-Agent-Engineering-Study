@@ -15,6 +15,7 @@ from reflection.improver import Improver
 from generator import AnswerGenerator
 from llm import chat
 from actionrouter import ActionRouter
+from context.manager import ContextManager
 
 
 def main():
@@ -32,6 +33,7 @@ def main():
     improver = Improver()
     generator = AnswerGenerator()
     router = ActionRouter()
+    context_manager = ContextManager()
 
     agent = Agent(
         planner,
@@ -43,6 +45,7 @@ def main():
         reflection,
         improver,
         router,
+        context_manager
     )
     while True:
         query = input("\nUser: ")

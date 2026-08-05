@@ -4,7 +4,69 @@ from tools.registry import TOOLS
 
 
 class Decision:
-    def decide(self, state):
+    def decide_currentstep(self,state):
+        tools_desc = "\n".join(
+            f"- {name}: {tool.description.strip()}" for name, tool in TOOLS.items()
+        )
+        prompt = f"""
+你是Agent执行决策模块。
+
+你的任务：
+判断【当前步骤】应该如何执行。
+
+不要规划新的步骤。
+不要判断任务是否最终完成。
+
+目标：
+{state.goal}
+
+当前步骤：
+{state.current_step}
+
+已有上下文：
+
+用户长期记忆：
+{state.memory_context}
+
+知识库内容：
+{state.knowledge_context}
+
+历史执行结果：
+{state.observations}
+
+当前评估：
+{state.evaluation}
+
+可用工具：
+{tools_desc}
+
+请选择执行方式：
+
+1. tool
+需要调用工具获取信息。
+
+2. llm
+当前步骤可以直接由模型完成。
+
+3. replan
+当前步骤无法执行，需要重新规划。
+
+返回JSON:
+{{
+    "action":"tool/llm/replan",
+    "reason":"",
+    "tool":"",
+    "args":{{}}
+}}
+
+不要输出其他内容。
+"""
+        
+        result = chat(prompt)
+        data = parse_json(result)
+        return DecisionModel(**data)
+
+    def decide_nextstep(self, state):
         tools_desc = "\n".join(
             f"- {name}: {tool.description.strip()}" for name, tool in TOOLS.items()
         )

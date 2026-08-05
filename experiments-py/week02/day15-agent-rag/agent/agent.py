@@ -1,6 +1,8 @@
 from state import AgentState
 import json
-from memory.memory import Memory
+from memory.short_memory import ShortMemory
+from memory.long_memory import LongMemory
+from memory.extractor import MemoryExtractor
 
 
 class Agent:
@@ -17,7 +19,8 @@ class Agent:
         reflection,
         improver,
         router,
-        max_steps=30,
+        context_manager,
+        max_steps=30
     ):
         self.planner = planner
         self.executor = executor
@@ -34,7 +37,12 @@ class Agent:
         self.router = router
 
         # Day10 新增
-        self.memory = Memory()
+        self.short_memory = ShortMemory()
+        # Day17 新增
+        self.long_memory = LongMemory()
+        self.context_manager = (context_manager)
+        self.history = []
+        self.extractor = MemoryExtractor()
 
     def _tool_key(self, name, args):
         return (name, json.dumps(args or {}, sort_keys=True))
@@ -49,9 +57,19 @@ class Agent:
         return result
 
     def run(self, goal):
-        history = self.memory.retrieve()
         state = AgentState(goal)
-        state.steps = self.planner.create_plan_dynamic(goal, history).steps
+        # 1、查询长期Memory
+        state.memory_context = (self.long_memory.retrieve(goal))
+        # 2、查询知识库
+        state.knowledge_context = []
+
+        # 如果需要RAG
+        # 后续有Decision触发
+
+        # 3、构建Context
+        context =(self.context_manager.build_context(goal,self.history,state.memory_context,state.knowledge_context))
+
+        state.steps = self.planner.create_plan_dynamic(goal,context).steps
         steps_done = 0
         tool_attempts = 0
         while state.steps and steps_done < self.max_steps:
@@ -59,63 +77,38 @@ class Agent:
             step = state.steps[0]
             state.current_step = step
 
-            # Act：对当前步骤生成动作，工具动作走统一缓存入口，避免重复执行
-            action = self.router.route(step)
-            if action.type == "tool":
-                observation = self._run_tool(state, action.tool, action.args)
-            else:
-                observation = self.executor.execute_llm(action.prompt)
+            # Think
+            decision = self.decision.decide_currentstep(state)
 
-            state.observation = observation
-            state.observations.append(
-                {"step": step, "action": action, "result": observation}
-            )
+            if decision.action == "tool":
+                observation = self._run_tool(state, decision.tool, decision.args)
+            if decision.action == "replan":
+                state.failed.append(step)
+                state.failed.append(decision.reason)
+                new_plan = self.replanner.replan_dynamic(state,context,decision.reason)
+                state.steps = new_plan.steps
+            if decision.action == "llm":
+                observation = self.executor.execute_llm(state.current_step)
+
+            if decision.tool == "knowledge_search":
+                state.knowledge_context.extend(observation)
+                state.observations.append(
+                    {
+                        "tool":"knowledge_search",
+                        "query":decision.args,
+                        "status":"success"
+                    }
+                )
+            else:
+                state.observation = observation
+                state.observations.append(
+                    {"step": step, "action": decision.action, "result": observation}
+                )
 
             # 评价
             state.evaluation = self.evaluator.evaluate(state, observation)
 
-            # Think
-            decision = self.decision.decide(state)
-            state.next_action = decision.action
-
-            if decision.action == "tool":
-                # 同一步工具尝试次数上限，防止 LLM 反复调用同一工具
-                if tool_attempts >= self.MAX_TOOL_PER_STEP:
-                    state.steps.pop(0)
-                    state.completed.append(step)
-                    tool_attempts = 0
-                    continue
-                tool_attempts += 1
-
-                # 走统一缓存入口，命中则不重复执行
-                tool_result = self._run_tool(state, decision.tool, decision.args)
-
-                state.observation = tool_result
-                state.observations.append(tool_result)
-                continue
-
-            # 非 tool 动作：本步结束，弹出该步骤
-            tool_attempts = 0
             state.steps.pop(0)
-
-            if decision.action == "continue":
-                state.completed.append(step)
-                continue
-
-            if decision.action == "replan":
-                state.failed.append(step)
-                state.failed.append(decision.reason)
-                new_plan = self.replanner.replan_dynamic(state, decision.reason)
-                state.steps = new_plan.steps
-
-            if decision.action == "finish":
-                state.completed.append(step)
-                break
-
-        if not state.completed:
-            return f"目标未完成：{goal}"
-        # else:
-        #     answer = f"完成 {len(state.completed)} 步：\n" + "\n".join(state.completed)
 
         # 根据计划生成结果
         answer = self.generator.generate(state)
@@ -126,7 +119,7 @@ class Agent:
         if reflection.score < self.reflection_threshold:
             answer = self.improver.improve_answer(goal, answer, reflection.issues)
 
-        self.memory.save(
+        self.short_memory.save(
             {
                 "goal": goal,
                 "completed": state.completed,
@@ -136,5 +129,15 @@ class Agent:
                 "final_answer": answer,
             }
         )
+
+        self.history.append({"role":"user","content":goal})
+
+        # Day17 新增长期记忆保存
+        memories = self.extractor.extract(
+            self.history
+        )
+        if not memories:
+            for m in memories:
+                self.long_memory.save(m)
 
         return answer

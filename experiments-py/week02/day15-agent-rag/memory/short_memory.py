@@ -1,5 +1,5 @@
 
-class Memory():
+class ShortMemory():
 
     def __init__(self):
         self.short_term = []

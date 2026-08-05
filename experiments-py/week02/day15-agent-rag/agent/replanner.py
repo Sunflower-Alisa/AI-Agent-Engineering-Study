@@ -10,7 +10,7 @@ class Replanner:
 
         state.failed.append(reason)
 
-    def replan_dynamic(self, state, observation):
+    def replan_dynamic(self, state,context, observation):
         cached = (
             "\n".join(
                 f"- {name}({args}): {result}"
@@ -22,6 +22,18 @@ class Replanner:
         当前目标：{state.goal},
         已经完成：{state.completed},
         当前计划：{state.steps},
+
+        当前执行结果:
+        {observation}
+
+        当前上下文:
+        {context}
+
+        判断:
+        1. 是否需要调整计划
+        2. 是否需要新增步骤
+        3. 是否可以结束任务
+        
         已完成的计算结果：
         {cached}
         请重新指定下一步计划。

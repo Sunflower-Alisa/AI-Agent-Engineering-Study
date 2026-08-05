@@ -57,8 +57,7 @@ day15-rag-agent/
 │   ├── decision.py       # Decision：decide_currentstep（tool/llm/replan）；decide_nextstep（未使用）
 │   ├── evaluator.py      # Evaluator：按 observation.issues 判断是否需要 replan
 │   └── replanner.py      # Replanner：replan_dynamic 重新生成未完成步骤
-├── context/              # 上下文管理（Day17）
-│   ├── __init__.py
+├── context/              # 上下文管理（Day17，namespace 包，无 __init__.py）
 │   └── manager.py        # ContextManager.build_context：拼装问题+历史+记忆+知识库
 ├── reflection/           # 反思改进
 │   ├── __init__.py
@@ -131,7 +130,7 @@ cd experiments-py/week02/day15-rag-agent
 5. **Python 3.9 兼容**：类型标注用 `Optional[str]`，不用 `str | None`（PEP 604 需 3.10+）。
 6. **控制台编码**：Windows 控制台默认 GBK，print 中避免 emoji（如 `✅`），否则报 `UnicodeEncodeError`。
 7. **循环导入**：RAG 向量库只放“数据+查询”，构建/检索管线独立在 `rag_pipeline.py`，避免 `embedding ↔ vector_store` 循环。
-8. **遗留项**：`ActionRouter`、`MAX_TOOL_PER_STEP`、`Decide.decide_nextstep` 在最新 `agent.py` 中已被注释/未调用；`state.py` 中 `knowlege_context`（拼写笔误）由 `agent.py` 动态设置的 `knowledge_context` 替代。
+8. **遗留项**：`ActionRouter`、`MAX_TOOL_PER_STEP`、`Decide.decide_nextstep` 在最新 `agent.py` 中已被注释/未调用。
 
 ## 知识点对应
 
