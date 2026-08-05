@@ -22,17 +22,31 @@ experiments-py/
 ├── config.py          ← 全局 LLM 配置（API 密钥、模型、地址）
 ├── .venv/             ← 统一虚拟环境（chromadb + openai）
 │
-└── week01/            ← 第一周：Agent 基础
-    ├── day01-agent-loop/    ← Agent Loop 基础实现
-    │   ├── agent.py
-    │   └── tools.py
-    ├── day02-tool-calling/  ← Tool Calling 实现
-    │   ├── agent.py
-    │   ├── tools.py
-    │   └── main.py
-    ├── day03-memory/        ← Memory 记忆模块
-    └── day04-planning/      ← Planning 计划与重规划
+├── week01/            ← 第一周：Agent 基础
+│   ├── day01-agent-loop/      ← Agent Loop 基础实现
+│   ├── day02-tool-calling/    ← Tool Calling 实现
+│   ├── day03-memory/          ← Memory 记忆模块
+│   ├── day04-planning/        ← Planning 计划与重规划
+│   └── day05-decision/        ← Decision 决策模块
+│
+└── week02/            ← 第二周：系统化 Agent
+    ├── day08-agent-tool-system/ ← 工具系统 + 反思（Tool Calling / ReAct / Reflection）
+    ├── day11-rag-agent/         ← RAG 知识库 Agent（Loader→Chunk→Embedding→VectorDB→Retriever）
+    └── day15-rag-agent/         ← Agent + RAG 综合（规划/执行/决策/反思 + knowledge_search 工具）
 ```
+
+## 各 day 说明
+
+| day | 主题 | 关键文件 |
+|---|---|---|
+| day01 | Agent 基础循环 | `agent.py` + `tools.py` |
+| day02 | 工具调用选择器 | `agent.py` / `main.py` / `tools.py` |
+| day03 | 记忆模块 | `memory.py` / `agent_with_memory.py` |
+| day04 | 计划与重规划 | `planner.py` / `replanner.py` |
+| day05 | 决策模块 | `decision.py` |
+| day08 | 工具系统 + 反思 | `agent.py` / `decision.py` / `actionrouter.py` / `generator.py` / `reflection/` |
+| day11 | RAG 知识库 Agent | `rag/`（loader / chunker / vector_store / rag_pipeline / llm） |
+| day15 | Agent + RAG 综合 | `agent/` / `rag/` / `tools/` / `reflection/` / `memory/` |
 
 ## 运行
 
@@ -44,10 +58,13 @@ experiments-py/
 set DEEPSEEK_API_KEY=sk-xxx
 
 # 用统一 venv 运行对应实验
-cd week01/day02-tool-calling
+cd week02/day15-rag-agent
 ..\..\.venv\Scripts\python.exe main.py
 
 # 或激活 venv 后直接运行
 ..\..\.venv\Scripts\activate
 python main.py
 ```
+
+> - day11 / day15 使用 chroma 向量库，首次运行会下载 MiniLM 嵌入模型（约 79MB，仅一次）
+> - day15 的 `main.py` 直接运行时会在顶部 `sys.path.insert` 注入项目根目录，保证绝对导入可用
