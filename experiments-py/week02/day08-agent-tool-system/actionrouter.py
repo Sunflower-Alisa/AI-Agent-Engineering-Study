@@ -1,6 +1,6 @@
 import re
 
-from .models import ActionModel
+from models import ActionModel
 
 _EXPR_RE = re.compile(r"\d+(?:\s*[+\-*/×]\s*\d+)+")
 

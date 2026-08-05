@@ -1,4 +1,4 @@
-from .llm import chat
+from llm import chat
 
 class AnswerGenerator:
     def generate(self,state):

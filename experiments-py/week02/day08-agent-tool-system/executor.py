@@ -1,5 +1,5 @@
-from .models import Execution
-from .tools.registry import TOOLS
+from models import Execution
+from tools.registry import TOOLS
 
 
 class Executor:

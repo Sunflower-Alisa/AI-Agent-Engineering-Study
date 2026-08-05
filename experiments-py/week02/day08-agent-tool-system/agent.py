@@ -1,6 +1,6 @@
-from .state import AgentState
+from state import AgentState
 import json
-from .memory import Memory
+from memory import Memory
 
 
 class Agent:
