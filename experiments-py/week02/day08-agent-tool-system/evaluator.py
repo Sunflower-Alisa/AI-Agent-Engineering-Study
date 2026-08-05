@@ -1,4 +1,4 @@
-from models import Evaluation
+from .models import Evaluation
 
 class Evaluator:
     # 用途：判断结果质量

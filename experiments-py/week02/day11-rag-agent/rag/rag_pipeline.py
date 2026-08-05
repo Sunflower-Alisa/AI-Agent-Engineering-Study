@@ -1,7 +1,7 @@
-from rag.loader import load_file
-from rag.chunker import split_text_langchain
+from .loader import load_file
+from .chunker import split_text_langchain
 
-from rag.vector_store import add_chunks_to_vector_db, search_vector_db
+from .vector_store import add_chunks_to_vector_db, search_vector_db
 
 
 def build_knowledge_base(file_path: str):
@@ -11,7 +11,7 @@ def build_knowledge_base(file_path: str):
     add_chunks_to_vector_db(chunks)
     print(f"知识库构建完成，共存入 {len(chunks)} 个文本块")
 
-
+# retrieve 检索
 def retrieve_context(question: str) -> str:
     """检索相关上下文"""
     related_chunks = search_vector_db(question)

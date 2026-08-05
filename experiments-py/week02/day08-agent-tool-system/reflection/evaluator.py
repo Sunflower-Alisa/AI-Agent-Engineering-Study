@@ -1,5 +1,5 @@
-from llm import chat,parse_json
-from models import ReflectionResult
+from ..llm import chat,parse_json
+from ..models import ReflectionResult
 
 # Day9 新增
 class Reflection_Evaluator:

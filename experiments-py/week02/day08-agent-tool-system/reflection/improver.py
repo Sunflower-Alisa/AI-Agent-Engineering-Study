@@ -1,4 +1,4 @@
-from llm import chat
+from ..llm import chat
 
 # Day9 新增
 class Improver:
