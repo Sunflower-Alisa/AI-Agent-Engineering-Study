@@ -113,7 +113,7 @@ day15-rag-agent/
 ## 运行
 
 ```bash
-cd experiments-py/week02/day15-rag-agent
+cd experiments-py/week03/day15-rag-agent
 ..\..\.venv\Scripts\python.exe main.py
 ```
 

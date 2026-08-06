@@ -12,9 +12,10 @@ AI Agent 工程化学习与实践，包含 Python 和 .NET 双版本实现。
 │   │   ├── day03-memory/         # 记忆模块
 │   │   ├── day04-planning/       # 计划与重规划
 │   │   └── day05-decision/       # 决策模块
-│   └── week02/           # 第二周：系统化 Agent
-│       ├── day08-agent-tool-system/ # 工具系统 + 反思 (Tool Calling / ReAct / Reflection)
-│       ├── day11-rag-agent/      # RAG 知识库 Agent (Loader → Chunk → Embedding → VectorDB → Retriever)
+│   ├── week02/           # 第二周：系统化 Agent
+│   │   ├── day08-agent-tool-system/ # 工具系统 + 反思 (Tool Calling / ReAct / Reflection)
+│   │   └── day11-rag-agent/      # RAG 知识库 Agent (Loader → Chunk → Embedding → VectorDB → Retriever)
+│   └── week03/           # 第三周：综合与图编排
 │       ├── day15-rag-agent/      # Agent + RAG 综合（上下文管理 / 记忆 / knowledge_search 工具）
 │       └── day18-langgraph-agent/ # LangGraph 状态图 Agent（StateGraph 节点 + 条件路由）
 │

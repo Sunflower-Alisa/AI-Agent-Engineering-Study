@@ -56,7 +56,7 @@ day18-langgraph-agent/
 ## 运行
 
 ```bash
-cd experiments-py/week02/day18-langgraph-agent
+cd experiments-py/week03/day18-langgraph-agent
 ..\..\.venv\Scripts\python.exe main.py
 ```
 

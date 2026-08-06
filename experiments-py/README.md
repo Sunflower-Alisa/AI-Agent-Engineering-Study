@@ -29,9 +29,11 @@ experiments-py/
 │   ├── day04-planning/        ← Planning 计划与重规划
 │   └── day05-decision/        ← Decision 决策模块
 │
-└── week02/            ← 第二周：系统化 Agent
-    ├── day08-agent-tool-system/ ← 工具系统 + 反思（Tool Calling / ReAct / Reflection）
-    ├── day11-rag-agent/         ← RAG 知识库 Agent（Loader→Chunk→Embedding→VectorDB→Retriever）
+├── week02/            ← 第二周：系统化 Agent
+│   ├── day08-agent-tool-system/ ← 工具系统 + 反思（Tool Calling / ReAct / Reflection）
+│   └── day11-rag-agent/         ← RAG 知识库 Agent（Loader→Chunk→Embedding→VectorDB→Retriever）
+│
+└── week03/            ← 第三周：综合与图编排
     ├── day15-rag-agent/         ← Agent + RAG 综合（规划/执行/决策/反思 + knowledge_search 工具）
     └── day18-langgraph-agent/   ← LangGraph 状态图 Agent（StateGraph 节点 + 条件路由）
 ```
@@ -60,7 +62,7 @@ experiments-py/
 set DEEPSEEK_API_KEY=sk-xxx
 
 # 用统一 venv 运行对应实验
-cd week02/day15-rag-agent
+cd week03/day15-rag-agent
 ..\..\.venv\Scripts\python.exe main.py
 
 # 或激活 venv 后直接运行
