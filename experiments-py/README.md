@@ -32,7 +32,8 @@ experiments-py/
 └── week02/            ← 第二周：系统化 Agent
     ├── day08-agent-tool-system/ ← 工具系统 + 反思（Tool Calling / ReAct / Reflection）
     ├── day11-rag-agent/         ← RAG 知识库 Agent（Loader→Chunk→Embedding→VectorDB→Retriever）
-    └── day15-rag-agent/         ← Agent + RAG 综合（规划/执行/决策/反思 + knowledge_search 工具）
+    ├── day15-rag-agent/         ← Agent + RAG 综合（规划/执行/决策/反思 + knowledge_search 工具）
+    └── day18-langgraph-agent/   ← LangGraph 状态图 Agent（StateGraph 节点 + 条件路由）
 ```
 
 ## 各 day 说明
@@ -47,6 +48,7 @@ experiments-py/
 | day08 | 工具系统 + 反思 | `agent.py` / `decision.py` / `actionrouter.py` / `generator.py` / `reflection/` |
 | day11 | RAG 知识库 Agent | `rag/`（loader / chunker / vector_store / rag_pipeline / llm） |
 | day15 | Agent + RAG 综合 | `agent/` / `rag/` / `tools/` / `reflection/` / `memory/` |
+| day18 | LangGraph 状态图 Agent | `agent/`（graph / nodes / router / state / prompt / llm） |
 
 ## 运行
 

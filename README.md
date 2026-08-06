@@ -6,14 +6,17 @@ AI Agent 工程化学习与实践，包含 Python 和 .NET 双版本实现。
 
 ```
 ├── experiments-py/       # Python 版实验代码
-│   └── week01/
-│       ├── day01-agent-loop/     # Agent 基础循环
-│       ├── day02-tool-calling/   # 工具调用
-│       ├── day03-memory/         # 记忆模块
-│       ├── day04-planning/       # 计划与重规划
-│       ├── day05-decision/       # 决策模块
+│   ├── week01/           # 第一周：Agent 基础
+│   │   ├── day01-agent-loop/     # Agent 基础循环
+│   │   ├── day02-tool-calling/   # 工具调用
+│   │   ├── day03-memory/         # 记忆模块
+│   │   ├── day04-planning/       # 计划与重规划
+│   │   └── day05-decision/       # 决策模块
+│   └── week02/           # 第二周：系统化 Agent
 │       ├── day08-agent-tool-system/ # 工具系统 + 反思 (Tool Calling / ReAct / Reflection)
-│       └── day11-rag-agent/      # RAG 知识库 Agent (Loader → Chunk → Embedding → VectorDB → Retriever)
+│       ├── day11-rag-agent/      # RAG 知识库 Agent (Loader → Chunk → Embedding → VectorDB → Retriever)
+│       ├── day15-rag-agent/      # Agent + RAG 综合（上下文管理 / 记忆 / knowledge_search 工具）
+│       └── day18-langgraph-agent/ # LangGraph 状态图 Agent（StateGraph 节点 + 条件路由）
 │
 ├── experiments-.net/     # .NET 版实验代码
 │   ├── AiAgent.Shared/           # 共享抽象层
@@ -36,19 +39,18 @@ AI Agent 工程化学习与实践，包含 Python 和 .NET 双版本实现。
 | day05 | 决策模块 | `decision.py` |
 | day08 | 工具系统 + 反思 | `agent.py` / `decision.py` / `actionrouter.py` / `generator.py` / `reflection/` |
 | day11 | RAG 知识库 Agent | `rag/` (loader / chunker / vector_store / rag_pipeline / llm) |
+| day15 | Agent + RAG 综合 | `agent/` / `context/` / `memory/` / `rag/` / `tools/` / `reflection/` |
+| day18 | LangGraph 状态图 Agent | `agent/` (graph / nodes / router / state / prompt / llm) |
 
 ## 运行
 
 ```bash
 # Python (需要 DEEPSEEK_API_KEY 环境变量)
-cd experiments-py/week01/dayXX-xxx && py -3.9 main.py
+cd experiments-py/week02/dayXX-xxx && ..\..\.venv\Scripts\python.exe main.py
 
 # .NET
 cd experiments-.net && dotnet run --project DayXX.xxxx
 ```
 
-> Python 统一使用 `experiments-py/.venv`（Python 3.9，通过 `.pth` 自动引入 `config.py`），运行示例：
-> ```bash
-> cd experiments-py/week01/day11-rag-agent && ..\..\.venv\Scripts\python.exe main.py
-> ```
-> day11 首次运行 chroma 会下载 MiniLM 嵌入模型（79MB，断网/慢速可改用 `curl -C -` 续传到位后自动复用缓存）。
+> Python 统一使用 `experiments-py/.venv`（Python 3.9，通过 `.pth` 自动引入 `config.py`）。
+> day11 / day15 首次运行 chroma 会下载 MiniLM 嵌入模型（79MB，断网/慢速可改用 `curl -C -` 续传到位后自动复用缓存）；day18 需在 venv 中安装 `langgraph`。
