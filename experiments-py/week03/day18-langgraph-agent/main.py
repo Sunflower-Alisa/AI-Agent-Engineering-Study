@@ -1,11 +1,13 @@
 from agent.graph import create_graph
 from agent.state import AgentState
+import tool
 
 app = create_graph()
 
+
 result = app.invoke(
     AgentState(
-        goal = "学习AI Agent",
+        goal = "2+3",
         steps = [],
         current_step = "",
         observation = "",

@@ -8,6 +8,9 @@ class AgentState(BaseModel):
     observation:str = None
     evaluation:Dict[str, Any] = None
     action:str = None
+    tool:str = None
+    args:str = None
     answer:str = None
     retry_count:int = 0
     next_step:str = None
+    router:Dict[str,Any] = None
